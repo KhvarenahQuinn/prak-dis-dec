@@ -1,166 +1,186 @@
 # 3.1 Sinkronisasi Waktu
+
 <p align="center">
   <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/1_6.png" width="400"><br>
-  Output Chrony
+  <em>Output Chrony</em>
 </p>
 
-Proses dimulai dengan instalasi dan konfigurasi Chrony sebagai NTP client. Setelah service diaktifkan, Chrony membaca file konfigurasi  `etc/chrony/chrony.conf` yang telah diubah untuk menggunakan server:
+Proses dimulai dengan instalasi dan konfigurasi Chrony sebagai NTP client. Setelah service diaktifkan, Chrony membaca file konfigurasi `etc/chrony/chrony.conf` yang telah diubah untuk menggunakan server:
+
 ```
 server time1.google.com iburst
 ```
+
 Opsi `iburst` memerintahkan Chrony untuk mengirim beberapa paket sekaligus di awal koneksi agar sinkronisasi pertama berlangsung lebih cepat.
 
 Pada tahap awal, terlihat dari output `chronyc sources` bahwa terdapat dua entri untuk `time1.google.com`. Entri pertama dengan status `^?` menunjukkan bahwa server belum dapat dijangkau atau masih dalam proses resolusi DNS. Entri kedua dengan status `^*` menunjukkan bahwa server ini telah berhasil dipilih sebagai sumber waktu terbaik (current best), dengan nilai:
+
 ```
 ^* time1.google.com    1   8   377   20   +282us[+448us] +/- 15ms
 ```
+
 Nilai `Stratum 1` menunjukkan bahwa `time1.google.com` terhubung langsung ke sumber waktu referensi (atomic clock), sehingga akurasinya sangat tinggi. Nilai `Reach 377` dalam format oktal berarti 8 polling terakhir semuanya berhasil, menandakan koneksi ke server stabil. Nilai `Poll 8` berarti interval polling saat ini adalah 2⁸ = 256 detik.
 
 Setelah koneksi stabil, Chrony masuk ke tahap pertukaran timestamp. Klien mengirimkan paket UDP ke port 123 milik `time1.google.com`, dan server membalas dengan empat timestamp T1, T2, T3, T4. Dari keempat timestamp tersebut, Chrony menghitung offset dan round-trip time untuk mengetahui seberapa jauh jam lokal berbeda dari waktu server.
 
 Hasil kalkulasi dapat dilihat pada output `chronyc tracking`:
+
 ```
 System time     : 0.000062578 seconds slow of NTP time
 Last offset     : +0.000166656 seconds
 RMS offset      : 0.000979190 seconds
 ```
+
 Nilai ini menunjukkan bahwa jam lokal hanya terlambat sekitar 0,06 milidetik dari waktu NTP, yang tergolong sangat akurat. `Last offset` sebesar +0,000166 detik adalah hasil koreksi terakhir yang diberikan, sedangkan `RMS offset` sebesar 0,000979 detik adalah rata-rata akurasi dari pengukuran-pengukuran sebelumnya.
 
 Selain offset, Chrony juga mengukur frequency error atau laju penyimpangan jam hardware:
+
 ```
 Frequency       : 517.844 ppm slow
 ```
+
 Nilai ini berarti jam hardware komputer berjalan 517,844 bagian per juta lebih lambat dari waktu sebenarnya. Chrony menyimpan nilai ini dan menggunakannya untuk mengkompensasi drift secara otomatis, bahkan sebelum polling berikutnya terjadi.
 
 Proses penyesuaian jam dilakukan melalui mekanisme clock slewing, yaitu Chrony mempercepat atau memperlambat jam secara bertahap, bukan dengan melompat langsung ke waktu yang benar. Hal ini penting agar aplikasi yang sensitif terhadap waktu seperti database dan sistem log tidak mengalami gangguan.
 
 Informasi lebih detail tentang kualitas pengukuran dapat dilihat pada output `chronyc sourcestats`:
+
 ```
 time1.google.com   27  16   39m   +0.005   1.210   +266ns   1088us
 ```
+
 Nilai `NP = 27` berarti Chrony telah mengumpulkan 27 sampel pengukuran. Dari 27 sampel tersebut, `NR = 16` adalah jumlah run residual dengan tanda yang sama, yang menunjukkan konsistensi pengukuran. `Span = 39m` berarti data telah dikumpulkan selama 39 menit. `Freq Skew = 1.210 ppm` menunjukkan estimasi error pada kalkulasi frekuensi sudah sangat kecil, dan `Std Dev = 1088us` adalah standar deviasi offset antar sampel yang menggambarkan stabilitas koneksi ke server. Semakin lama Chrony berjalan, nilai-nilai ini akan semakin kecil karena Chrony terus belajar dan menyempurnakan model koreksi jamnya.
 
-#3.2 Vector Clock
+----
+
+# 3.2 Vector Clock
+
 <p align="center">
   <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/2_1.png" width="400"><br>
-  Output vclocks
+  <em>Output vclocks</em>
 </p>
-1. Proses dimulai dengan inisialisasi tiga buah proses dalam sistem terdistribusi, yaitu P0, P1, dan P2. Masing-masing proses memiliki vector clock awal `[0, 0, 0]`, yang menunjukkan bahwa belum ada event yang terjadi di sistem.
-  
-  Pada tahap awal, ketika program dijalankan, output:
-  
-  ```
-  P0: [0, 0, 0]
-  P1: [0, 0, 0]
-  P2: [0, 0, 0]
-  ```
-  
-  menunjukkan bahwa semua proses masih berada pada kondisi awal tanpa aktivitas. Hal ini sesuai dengan konsep vector clock, dimana setiap proses menyimpan array sepanjang jumlah proses dan diinisialisasi dengan nol.
-  
-  Selanjutnya, Process 0 melakukan satu event lokal dengan memanggil fungsi `increment()`. Akibatnya, elemen index ke-0 pada vector clock bertambah:
-  
-  ```
-  P0: [1, 0, 0]
-  ```
-  
-  Ini menandakan bahwa P0 telah melakukan satu event. Jika dilakukan secara manual, langkah ini sama dengan menambahkan 1 pada posisi proses tersebut.
-  
-  Tahap berikutnya adalah komunikasi antar proses. P0 mengirim pesan ke P1 menggunakan `send_message()`. Pada saat pengiriman, clock P0 kembali diincrement terlebih dahulu sehingga menjadi:
-  
-  ```
-  P0: [2, 0, 0]
-  ```
-  
-  Pesan yang dikirim membawa nilai vector clock `[2, 0, 0]`. Saat P1 menerima pesan tersebut melalui `receive_message()`, dilakukan proses merge dengan cara mengambil nilai maksimum tiap elemen:
-  
-  ```
-  max([0,0,0], [2,0,0]) = [2,0,0]
-  ```
-  
-  Kemudian P1 melakukan increment lokal:
-  
-  ```
-  P1: [2, 1, 0]
-  ```
-  
-  Hasil ini menunjukkan bahwa P1 mengetahui seluruh event yang terjadi di P0 hingga saat pesan diterima. Jika dibandingkan dengan perhitungan manual, proses ini identik dengan aturan vector clock: merge → increment.
-  
-  Selanjutnya, Process 2 melakukan event lokal:
-  
-  ```
-  P2: [0, 0, 1]
-  ```
-  
-  Ini menunjukkan bahwa hanya P2 yang mengalami perubahan tanpa interaksi dengan proses lain.
-  
-  Kemudian P1 mengirim pesan ke P2. Sama seperti sebelumnya, P1 melakukan increment terlebih dahulu:
-  
-  ```
-  P1: [2, 2, 0]
-  ```
-  
-  Pesan `[2,2,0]` dikirim ke P2. Saat diterima, P2 melakukan merge:
-  
-  ```
-  max([0,0,1], [2,2,0]) = [2,2,1]
-  ```
-  
-  Lalu dilakukan increment:
-  
-  ```
-  P2: [2, 2, 2]
-  ```
-  
-  Hal ini menunjukkan bahwa P2 sekarang mengetahui seluruh event yang terjadi di P0 dan P1 sebelum pesan diterima.
-  
-  Pada tahap akhir dilakukan pengecekan hubungan kausalitas menggunakan fungsi `happens_before` dan `is_concurrent`.
-  
-  * `VC0 happens before VC1` bernilai **True**, karena:
-  
-    ```
-    [2,0,0] <= [2,2,0]
-    ```
-  
-    dan ada minimal satu elemen yang lebih kecil → artinya event di P0 terjadi sebelum P1.
-  
-  * `VC1 happens before VC0` bernilai **False**, karena terdapat elemen P1 yang lebih besar dari P0.
-  
-  * `VC0 is concurrent with VC2` bernilai **False**, karena:
-  
-    ```
-    [2,0,0] <= [2,2,2]
-    ```
-  
-    sehingga VC0 sebenarnya terjadi sebelum VC2, bukan concurrent.
-  
-  Jika dibandingkan dengan perhitungan manual, seluruh hasil output program ini sudah sesuai dengan algoritma vector clock, yaitu:
-  
-  1. Increment saat event lokal
-  2. Increment sebelum kirim pesan
-  3. Merge (max) saat menerima pesan
-  4. Increment setelah menerima pesan
 
+1. Proses dimulai dengan inisialisasi tiga buah proses dalam sistem terdistribusi, yaitu P0, P1, dan P2. Masing-masing proses memiliki vector clock awal `[0, 0, 0]`, yang menunjukkan bahwa belum ada event yang terjadi di sistem.
+
+   Pada tahap awal, ketika program dijalankan, output:
+
+   ```
+   P0: [0, 0, 0]
+   P1: [0, 0, 0]
+   P2: [0, 0, 0]
+   ```
+
+   menunjukkan bahwa semua proses masih berada pada kondisi awal tanpa aktivitas. Hal ini sesuai dengan konsep vector clock, dimana setiap proses menyimpan array sepanjang jumlah proses dan diinisialisasi dengan nol.
+
+   Selanjutnya, Process 0 melakukan satu event lokal dengan memanggil fungsi `increment()`. Akibatnya, elemen index ke-0 pada vector clock bertambah:
+
+   ```
+   P0: [1, 0, 0]
+   ```
+
+   Ini menandakan bahwa P0 telah melakukan satu event. Jika dilakukan secara manual, langkah ini sama dengan menambahkan 1 pada posisi proses tersebut.
+
+   Tahap berikutnya adalah komunikasi antar proses. P0 mengirim pesan ke P1 menggunakan `send_message()`. Pada saat pengiriman, clock P0 kembali diincrement terlebih dahulu sehingga menjadi:
+
+   ```
+   P0: [2, 0, 0]
+   ```
+
+   Pesan yang dikirim membawa nilai vector clock `[2, 0, 0]`. Saat P1 menerima pesan tersebut melalui `receive_message()`, dilakukan proses merge dengan cara mengambil nilai maksimum tiap elemen:
+
+   ```
+   max([0,0,0], [2,0,0]) = [2,0,0]
+   ```
+
+   Kemudian P1 melakukan increment lokal:
+
+   ```
+   P1: [2, 1, 0]
+   ```
+
+   Hasil ini menunjukkan bahwa P1 mengetahui seluruh event yang terjadi di P0 hingga saat pesan diterima. Jika dibandingkan dengan perhitungan manual, proses ini identik dengan aturan vector clock: merge → increment.
+
+   Selanjutnya, Process 2 melakukan event lokal:
+
+   ```
+   P2: [0, 0, 1]
+   ```
+
+   Ini menunjukkan bahwa hanya P2 yang mengalami perubahan tanpa interaksi dengan proses lain.
+
+   Kemudian P1 mengirim pesan ke P2. Sama seperti sebelumnya, P1 melakukan increment terlebih dahulu:
+
+   ```
+   P1: [2, 2, 0]
+   ```
+
+   Pesan `[2,2,0]` dikirim ke P2. Saat diterima, P2 melakukan merge:
+
+   ```
+   max([0,0,1], [2,2,0]) = [2,2,1]
+   ```
+
+   Lalu dilakukan increment:
+
+   ```
+   P2: [2, 2, 2]
+   ```
+
+   Hal ini menunjukkan bahwa P2 sekarang mengetahui seluruh event yang terjadi di P0 dan P1 sebelum pesan diterima.
+
+   Pada tahap akhir dilakukan pengecekan hubungan kausalitas menggunakan fungsi `happens_before` dan `is_concurrent`.
+
+   * `VC0 happens before VC1` bernilai **True**, karena:
+
+     ```
+     [2,0,0] <= [2,2,0]
+     ```
+
+     dan ada minimal satu elemen yang lebih kecil → artinya event di P0 terjadi sebelum P1.
+
+   * `VC1 happens before VC0` bernilai **False**, karena terdapat elemen P1 yang lebih besar dari P0.
+
+   * `VC0 is concurrent with VC2` bernilai **False**, karena:
+
+     ```
+     [2,0,0] <= [2,2,2]
+     ```
+
+     sehingga VC0 sebenarnya terjadi sebelum VC2, bukan concurrent.
+
+   Jika dibandingkan dengan perhitungan manual, seluruh hasil output program ini sudah sesuai dengan algoritma vector clock, yaitu:
+
+   1. Increment saat event lokal
+   2. Increment sebelum kirim pesan
+   3. Merge (max) saat menerima pesan
+   4. Increment setelah menerima pesan
 
 2. Modul
+
    <p align="center">
-  <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/2_2.png" width="400"><br>
-  vector_clocks.py
-  </p>
-  <p align="center">
-    <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/2_3.png" width="400"><br>
-    main.py
-  </p>
-  <p align="center">
-    <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/2_4.png" width="400"><br>
-    Output
-  </p>
+     <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/2_2.png" width="400"><br>
+     <em>vector_clocks.py</em>
+   </p>
+
+   <p align="center">
+     <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/2_3.png" width="400"><br>
+     <em>main.py</em>
+   </p>
+
+   <p align="center">
+     <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/2_4.png" width="400"><br>
+     <em>Output</em>
+   </p>
+
+----
 
 # 3.3 Problem Tanpa Sinkronisasi
+
 <p align="center">
   <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/3_1.png" width="400"><br>
-  Output
+  <em>Output</em>
 </p>
-   
+
 Proses dimulai dengan pembuatan 5 thread, yaitu Task A, B, C, D, dan E menggunakan modul `threading` di Python. Setiap thread menjalankan fungsi `task()` yang memiliki dua aktivitas utama, yaitu mencetak status mulai (starting), kemudian melakukan `sleep` selama 5 detik untuk mensimulasikan operasi I/O.
 
 Pada tahap awal, ketika semua thread dijalankan menggunakan `start()`, kelima thread langsung dieksekusi secara **bersamaan (concurrent)** oleh scheduler sistem operasi. Hal ini terlihat dari output:
@@ -219,9 +239,6 @@ All tasks completed.
 
 Tanpa `join()`, ada kemungkinan program utama selesai lebih dulu sebelum thread-thread tersebut selesai dieksekusi.
 
-
-**Penyebab Perbedaan Output**
-
 Perbedaan output terjadi karena beberapa faktor utama:
 
 1. **Thread Scheduling oleh OS**
@@ -234,17 +251,22 @@ Perbedaan output terjadi karena beberapa faktor utama:
    Berbeda dengan program biasa, thread tidak dijalankan satu per satu, melainkan bisa berjalan “bersamaan” (interleaving execution).
 
 ## 3.3.1 Data Race / Race Conditions
+
 1. Penjelasan Visual race 01
-   <p align="center">
-    <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/Foto1.jpeg" width="400"><br>
-    Output race 01 dan 02
-  </p>
+
+<p align="center">
+  <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/Foto1.jpeg" width="400"><br>
+  <em>Output race 01 dan 02</em>
+</p>
+
 3. Race 02
-  <p align="center">
-    <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/3_2.png" width="400"><br>
-    Output race 01 dan 02
-  </p>
-  Proses dimulai dengan inisialisasi variabel global `balance = 100` yang digunakan sebagai saldo bersama, serta objek `counter_lock` yang dibuat menggunakan `threading.Lock()` sebagai mekanisme pengaman akses data. Dua thread, yaitu `t1` dan `t2`, kemudian dijalankan secara bersamaan dan masing-masing mengeksekusi fungsi `withdraw(80)`.
+
+<p align="center">
+  <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/3_2.png" width="400"><br>
+  <em>Output race 01 dan 02</em>
+</p>
+
+Proses dimulai dengan inisialisasi variabel global `balance = 100` yang digunakan sebagai saldo bersama, serta objek `counter_lock` yang dibuat menggunakan `threading.Lock()` sebagai mekanisme pengaman akses data. Dua thread, yaitu `t1` dan `t2`, kemudian dijalankan secara bersamaan dan masing-masing mengeksekusi fungsi `withdraw(80)`.
 
 Pada saat eksekusi dimulai, kedua thread mencoba mengakses fungsi `withdraw()`. Namun, karena terdapat blok `with counter_lock:`, hanya satu thread yang dapat masuk ke bagian kode tersebut pada satu waktu, sedangkan thread lainnya harus menunggu hingga lock dilepaskan.
 
@@ -264,18 +286,23 @@ Race condition tidak terjadi karena seluruh proses penting, yaitu pengecekan sal
 
 Dengan demikian, kondisi dimana kedua thread membaca nilai saldo yang sama sebelum terjadi perubahan tidak pernah terjadi. Operasi yang sebelumnya terpisah (cek → delay → update) kini menjadi satu kesatuan yang tidak dapat disela oleh thread lain, sehingga menghasilkan data yang konsisten dan sesuai dengan logika sistem.
 
+
 ## 3.3.2 Deadlock
+
 <p align="center">
   <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/Foto2.jpeg" width="400"><br>
-  Output Deadlock 01
+  <em>Output Deadlock 01</em>
 </p>
+
 1. Penjelasan visual deadlock 01
 
 2. Deadlock 02
-   <p align="center">
+
+<p align="center">
   <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/4_2.png" width="400"><br>
-  Output Deadlock 02
+  <em>Output Deadlock 02</em>
 </p>
+
 Proses dimulai dengan pembuatan dua buah lock bersama, yaitu `lock_a` dan `lock_b`, yang akan digunakan oleh dua thread (`thread1` dan `thread2`). Masing-masing thread mencoba mengakses kedua lock tersebut, namun dengan urutan yang berbeda. Thread 1 mengambil `lock_a` terlebih dahulu, sedangkan Thread 2 mengambil `lock_b` terlebih dahulu.
 
 Pada tahap awal eksekusi, kedua thread dijalankan secara concurrent. Thread 1 berhasil memperoleh `lock_a` dan mencetak:
@@ -314,21 +341,29 @@ Deadlock tidak terjadi karena tidak terpenuhinya kondisi utama deadlock, yaitu *
 
 Selain itu, adanya timeout juga memastikan bahwa thread tidak akan terjebak dalam kondisi menunggu tanpa batas (infinite waiting).
 
+---
+
 # 3.4 Algoritma Raft
+
 1. Penjelasan Visualisasi Raft
-   <p align="center">
+
+<p align="center">
   <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/Foto3.jpeg" width="400"><br>
 </p>
+
 2. Modul
+
 <p align="center">
   <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/5_2.png" width="400"><br>
-  raft_module.py
+  <em>raft_module.py</em>
 </p>
+
 <p align="center">
   <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/5_3.png" width="400"><br>
-  main.py
+  <em>main.py</em>
 </p>
+
 <p align="center">
   <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/5_4.png" width="400"><br>
-  output main
+  <em>output main</em>
 </p>

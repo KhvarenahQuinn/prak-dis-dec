@@ -315,5 +315,20 @@ Deadlock tidak terjadi karena tidak terpenuhinya kondisi utama deadlock, yaitu *
 Selain itu, adanya timeout juga memastikan bahwa thread tidak akan terjebak dalam kondisi menunggu tanpa batas (infinite waiting).
 
 # 3.4 Algoritma Raft
-
- 
+1. Penjelasan Visualisasi Raft
+   <p align="center">
+  <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/Foto3.png" width="400"><br>
+</p>
+2. Modul
+<p align="center">
+  <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/5_2.png" width="400"><br>
+  raft_module.py
+</p>
+<p align="center">
+  <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/5_3.png" width="400"><br>
+  main.py
+</p>
+<p align="center">
+  <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/5_4.png" width="400"><br>
+  output main
+</p>

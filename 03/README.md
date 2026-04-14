@@ -250,6 +250,8 @@ Perbedaan output terjadi karena beberapa faktor utama:
 3. **Eksekusi Concurrent, Bukan Sequential**
    Berbeda dengan program biasa, thread tidak dijalankan satu per satu, melainkan bisa berjalan “bersamaan” (interleaving execution).
 
+---
+
 ## 3.3.1 Data Race / Race Conditions
 
 1. Penjelasan Visual race 01
@@ -259,7 +261,7 @@ Perbedaan output terjadi karena beberapa faktor utama:
   <em>Output race 01 dan 02</em>
 </p>
 
-3. Race 02
+2. Race 02
 
 <p align="center">
   <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/3_2.png" width="400"><br>
@@ -286,6 +288,7 @@ Race condition tidak terjadi karena seluruh proses penting, yaitu pengecekan sal
 
 Dengan demikian, kondisi dimana kedua thread membaca nilai saldo yang sama sebelum terjadi perubahan tidak pernah terjadi. Operasi yang sebelumnya terpisah (cek → delay → update) kini menjadi satu kesatuan yang tidak dapat disela oleh thread lain, sehingga menghasilkan data yang konsisten dan sesuai dengan logika sistem.
 
+---
 
 ## 3.3.2 Deadlock
 

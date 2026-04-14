@@ -236,7 +236,7 @@ Perbedaan output terjadi karena beberapa faktor utama:
 ## 3.3.1 Data Race / Race Conditions
 1. Penjelasan Visual race 01
    <p align="center">
-    <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/Foto1.png" width="400"><br>
+    <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/Foto1.jpeg" width="400"><br>
     Output race 01 dan 02
   </p>
 3. Race 02
@@ -266,7 +266,7 @@ Dengan demikian, kondisi dimana kedua thread membaca nilai saldo yang sama sebel
 
 ## 3.3.2 Deadlock
 <p align="center">
-  <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/Foto2.png" width="400"><br>
+  <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/Foto2.jpeg" width="400"><br>
   Output Deadlock 01
 </p>
 1. Penjelasan visual deadlock 01
@@ -317,7 +317,7 @@ Selain itu, adanya timeout juga memastikan bahwa thread tidak akan terjebak dala
 # 3.4 Algoritma Raft
 1. Penjelasan Visualisasi Raft
    <p align="center">
-  <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/Foto3.png" width="400"><br>
+  <img src="https://github.com/KhvarenahQuinn/prak-dis-dec/blob/main/03/SS/Foto3.jpeg" width="400"><br>
 </p>
 2. Modul
 <p align="center">

@@ -1,6 +1,6 @@
 # 1. Install Podman
 
-Melakukan instalasi Podman pada environment KillerKoda menggunakan package manager apt. Setelah proses instalasi selesai, dilakukan pengecekan versi untuk memastikan Podman berhasil terinstall dan siap digunakan sebagai container engine.
+Melakukan instalasi Podman pada environment KillerKoda. Setelah proses instalasi selesai, dilakukan pengecekan versi untuk memastikan Podman berhasil terinstall dan siap digunakan sebagai container engine.
 
 <p align="center"> <img src="https://raw.githubusercontent.com/KhvarenahQuinn/prak-dis-dec/main/UTS/SS/1_1.png" width="400"><br> <img src="https://raw.githubusercontent.com/KhvarenahQuinn/prak-dis-dec/main/UTS/SS/1_2.png" width="400"><br> </p>
 

@@ -13,6 +13,7 @@ Melakukan pengunduhan YugabyteDB versi LTS. File instalasi diunduh ke direktori 
 <p align="center">
   <img src="https://raw.githubusercontent.com/KhvarenahQuinn/prak-dis-dec/main/10/SS/2.png" width="400">
 </p>
+
 Setelah proses unduhan selesai, file arsip diekstrak sehingga seluruh komponen YugabyteDB dapat digunakan. Selanjutnya dilakukan pengecekan direktori hasil ekstraksi untuk memastikan proses berjalan dengan baik.
 
 

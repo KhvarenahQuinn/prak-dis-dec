@@ -1,6 +1,6 @@
 # Praktikum Modul 10 - Data Terdistribusi
 
-## 1. Instalasi
+# 1. Instalasi
 
 
 <p align="center">
@@ -43,7 +43,7 @@ Konfigurasi `ulimit` dilakukan sesuai kebutuhan YugabyteDB agar sistem dapat men
 
 Environment variable kemudian dibuat dan diaktifkan sehingga perintah-perintah YugabyteDB dapat dijalankan langsung dari terminal tanpa perlu menuliskan path secara manual.
 
-## 2. Membuat Cluster
+# 2. Membuat Cluster
 <p align="center">
   <img src="https://raw.githubusercontent.com/KhvarenahQuinn/prak-dis-dec/main/10/SS/7.png" width="400">
 </p>
@@ -79,7 +79,7 @@ Konfigurasi *data placement* dilakukan untuk mengatur distribusi data dan replik
 Pada tahap ini dilakukan verifikasi bahwa layanan YugabyteDB telah aktif dan berjalan pada port yang digunakan oleh cluster.
 
 
-## 3. Sharding
+# 3. Sharding
 <p align="center">
   <img src="https://raw.githubusercontent.com/KhvarenahQuinn/prak-dis-dec/main/10/SS/12.png" width="400">
 </p>
@@ -143,12 +143,14 @@ Pengujian kedua menggunakan pencarian berdasarkan satu nilai `id`. Database dapa
 Pada pengujian rentang nilai, database tetap melakukan pemindaian terhadap seluruh data sebelum menerapkan filter yang diminta. Hal ini menunjukkan bahwa hash sharding kurang optimal untuk query berbasis rentang.
 
 
-## 4. Shutdown YugabyteDB
-<p align="center">
-  <img src="https://raw.githubusercontent.com/KhvarenahQuinn/prak-dis-dec/main/10/SS/17.png" width="400">
-</p>
+# 4. Shutdown YugabyteDB
 
 Setelah seluruh pengujian selesai dilakukan, setiap node pada cluster dihentikan secara bertahap menggunakan perintah `yugabyted stop`. Langkah ini memastikan seluruh layanan YugabyteDB berhenti dengan aman dan tidak meninggalkan proses yang masih berjalan.
 
+# 5. Tugas
+https://www.credential.net/9bb4b996-1ed2-46cc-9a54-8b88085b006d#acc.WcvyADz6
+<p align="center">
+  <img src="https://api.accredible.com/v1/frontend/credential_website_embed_image/badge/184189990">
+</p>
 
 

@@ -7,7 +7,7 @@
   <img src="https://raw.githubusercontent.com/KhvarenahQuinn/prak-dis-dec/main/10/SS/1.png" width="400">
 </p>
 
-Pada tahap awal dilakukan proses pengunduhan YugabyteDB versi LTS yang akan digunakan selama praktikum. File instalasi diunduh ke direktori yang telah disiapkan sebagai lokasi penyimpanan perangkat lunak basis data.
+Melakukan pengunduhan YugabyteDB versi LTS. File instalasi diunduh ke direktori yang telah disiapkan `/software`.
 
 
 <p align="center">
